@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Quote
+{% endblock %}
+
+{% block main %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Name</th>
+                <th>Shares</th>
+                <th>Price</th>
+                <th>TOTAL</th>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <th>Grand Total</th>
+                <td colspan="3"></td>
+                <td>{{(total_value + cash_remaining) | usd}}</td>
+            </tr>
+        </tfoot>
+
+        <tbody>
+            {% for stock in summary %}
+            <tr>
+                <td>{{ stock.symbol }}</td>
+                <td>{{ quotes[stock.symbol]["name"] }}</td>
+                <td>{{ stock.total_shares }}</td>
+                <td>{{ quotes[stock.symbol]["price"] | usd}}</td>
+                <td>{{ (stock.total_shares * quotes[stock.symbol]["price"]) | usd}}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <th>Cash Available</th>
+                <td colspan="3"></td>
+                <td>{{ cash_remaining | usd}}</td>
+            </tr>
+        </tbody>
+    </table>
+{% endblock %}
