@@ -34,7 +34,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///finance.db")
+db = SQL("postgres://kpikygrwtlgajv:ab83b49d1d653019994631ee996334df2a1ec6e37b9360f5c0e36d0636877e1c@ec2-35-175-155-248.compute-1.amazonaws.com:5432/dboigqfpko4cjc")
 
 # Make sure API key is set
 if not os.environ.get("API_KEY"):
@@ -105,7 +105,7 @@ def buy():
 @app.route("/history")
 @login_required
 def history():
-    """Show history of transactions"""
+    """Show history of transactions"""g
     transactions = db.execute("SELECT symbol, shares, price_per_share, created_at FROM transactions WHERE user_id = :user_id ORDER BY created_at ASC", user_id=session["user_id"])
 
     return render_template("history.html", transactions=transactions)
