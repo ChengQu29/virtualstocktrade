@@ -248,7 +248,7 @@ def sell():
         shares = int(request.form.get("shares"))
         if shares <= 0:
             return apology("Cannot sell less than or 0 shares")
-
+        # Query database for the number of shares the users owns
         stock = db.execute("SELECT SUM(shares) as total_shares FROM transactions WHERE user_id = :user_id AND symbol = :symbol GROUP BY symbol",
                            user_id=session["user_id"], symbol=request.form.get("symbol"))
         if stock[0]["total_shares"] <= 0 or stock[0]["total_shares"] < shares:
