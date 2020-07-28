@@ -1,6 +1,7 @@
 import os
 
 from cs50 import SQL
+import sqlite3
 from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_session import Session
 from tempfile import mkdtemp
@@ -28,17 +29,18 @@ app.jinja_env.filters["usd"] = usd
 
 
 # Configure session to use filesystem (instead of signed cookies)
-app.config["SESSION_FILE_DIR"] = mkdtemp()
+#app.config["SESSION_FILE_DIR"] = mkdtemp()
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-db = SQL("postgres://mnrnqmemyohmdx:17f49cbc1785cffe01be5b6b22abc3b7dbb2491c702b66e22c7b3265f81a3804@ec2-35-175-155-248.compute-1.amazonaws.com:5432/devicaoccbv6cj")
+db = SQL("sqlite:///finance.db")
+#db = SQL("postgres://mnrnqmemyohmdx:17f49cbc1785cffe01be5b6b22abc3b7dbb2491c702b66e22c7b3265f81a3804@ec2-35-175-155-248.compute-1.amazonaws.com:5432/devicaoccbv6cj")
 
 # Make sure API key is set
-if not os.environ.get("API_KEY"):
-    raise RuntimeError("API_KEY not set")
+#if not os.environ.get("API_KEY"):
+#    raise RuntimeError("API_KEY not set")
 
 
 @app.route("/")
