@@ -4,6 +4,7 @@ from cs50 import SQL
 from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_session import Session
 from tempfile import mkdtemp
+# WSGI ( web server gateaway interface) is a Python standard described in detail in PEP 3333.
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -35,14 +36,9 @@ Session(app)
 
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///finance.db")
-#db = SQL("postgres://mnrnqmemyohmdx:17f49cbc1785cffe01be5b6b22abc3b7dbb2491c702b66e22c7b3265f81a3804@ec2-35-175-155-248.compute-1.amazonaws.com:5432/devicaoccbv6cj")
 
 # Make sure API key is set
-#if not os.environ.get("API_KEY"):
-#    raise RuntimeError("API_KEY not set")
-try:
-    os.environ["API_KEY"] = [pk_44fc89d04e1a4fecbc4e35f5313b5225]
-except:
+if not os.environ.get("API_KEY"):
     raise RuntimeError("API_KEY not set")
 
 @app.route("/")
@@ -73,7 +69,8 @@ def buy():
     """Buy shares of stock"""
     if request.method == "POST":
         # look up stock name
-        stock = lookup(request.form.get("symbol"))
+        #stock = lookup(request.form.get("symbol"))
+        stock = lookup(request.args.get('symbol'))
         if stock == None:
             return apology("invalid stock abbreviation", 403)
         # get number of shares user wants to buy
@@ -95,7 +92,7 @@ def buy():
 
             db.execute("INSERT INTO transactions (user_id, symbol, shares, price_per_share) VALUES(:user_id, :stock_bought, :shares, :price)",
                    user_id=session["user_id"],
-                   stock_bought=request.form.get("symbol"),
+                   stock_bought=request.args.get('symbol'),
                    shares=shares,
                    price=price_per_share)
 
@@ -103,7 +100,10 @@ def buy():
 
             return redirect(url_for("index"))
     else:
-        return render_template("buy.html")
+        stock = lookup(request.args.get('symbol'))
+        changePercent = format(stock['changePercent'], ".2%")
+        return render_template("buy.html", symbol = stock['symbol'], companyName = stock['name'], price=usd(stock['price']),
+                                change=stock['change'], changePercent=changePercent, latestTime=stock['latestTime'])
 
 
 @app.route("/history")
@@ -169,12 +169,14 @@ def quote():
     """Get stock quote."""
     if request.method == "POST":
 
-        stock = lookup(request.form.get("symbol"))
+        stock = lookup(request.form.get("symbol").upper())
 
         if stock == None:
             return apology("invalid stock abbreviation",403)
         else:
-            return render_template("quoted.html", symbol=stock['symbol'], price=usd(stock['price']))
+            changePercent = format(stock['changePercent'], ".2%")
+            return render_template("quoted.html", symbol=stock['symbol'], companyName=stock['name'], price=usd(stock['price']),
+                                    change=stock['change'], changePercent=changePercent, latestTime=stock['latestTime'])
 
     else:
         return render_template("quote.html")

@@ -5,11 +5,71 @@
 {% endblock %}
 
 {% block main %}
+    <h3> Search for a stock to start </h3>
+    <p> Information on 5000+ stocks, including all the companies in the S&P500 index.</p>
+
     <form action="/quote" method="post">
         <div class="form-group">
-            <input autocomplete="off" autofocus class="form-control" name="symbol" placeholder="Symbol" type="text" required/>
+            <input autocomplete="off" autofocus class="form-control" id="myInput" name="symbol" onkeyup="myFunction()" placeholder="Search by symbol" type="text" required/>
+            <button class="btn btn-primary" type="submit">Quote</button>
         </div>
-
-        <button class="btn btn-primary" type="submit">Quote</button>
     </form>
+
+    <p>Example searches: AAPL, Tesla, SHOP, AMZN</p>
+
+
+    <h4>All stock symbols: </h4>
+    <p1></p1>
+
+    <script>
+        fetch('https://cloud.iexapis.com/beta/ref-data/symbols?token=pk_48629ca630d84f7aa267174fed093cd0')
+            .then(function (response){
+                return response.json();
+            })
+            .then(function (data){
+                appendData(data);
+            })
+            .catch(function (err){
+                console.log('error: ' + err);
+            });
+
+        function appendData(data) {
+            var tb = document.createElement("TABLE");
+            tb.setAttribute("id", "myTable");
+            tb.setAttribute("class", "table table-striped");
+            var tbody = document.createElement("tbody");
+            tb.appendChild(tbody);
+
+            for (var i=0; i< data.length; i++){
+                var tr = document.createElement('tr');
+                var a = document.createElement('a');
+                a.setAttribute('href', "/buy?symbol="+ data[i].symbol);
+                a.innerHTML = data[i].symbol + '  (' + data[i].name + ')';
+                tr.appendChild(a);
+                tbody.appendChild(tr);
+            }
+
+            document.querySelector("p1").appendChild(tb);
+        }
+
+        function myFunction() {
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("myInput");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("myTable");
+            tr = table.getElementsByTagName("tr");
+            //console.log(li)
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i];
+                txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+
+
 {% endblock %}

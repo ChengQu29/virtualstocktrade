@@ -1,2 +1,9 @@
 API token
-pk_44fc89d04e1a4fecbc4e35f5313b5225
+quchengwen@gmail.com
+pk_abdaef95f02c438db38f98cb7a845192
+
+cq6507@mun.ca
+pk_48629ca630d84f7aa267174fed093cd0
+
+one month historical data api call example:
+https://cloud.iexapis.com/stable/stock/aapl/chart/1m?token=pk_48629ca630d84f7aa267174fed093cd0

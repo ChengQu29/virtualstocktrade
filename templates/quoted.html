@@ -5,5 +5,87 @@
 {% endblock %}
 
 {% block main %}
-    <p> A share of {{symbol}} costs {{price}}.</p>
+    <h3> <em>{{companyName}} ({{symbol}})</em></h3>
+    Stock Price:
+    <span>{{price}}</span> USD
+    <span id="change">{{change}}</span>
+    <span id="changePercent">({{changePercent}})</span>
+    <p> Update: {{latestTime}}</p>
+
+    <form action="/buy?symbol={{symbol}}" method="post">
+        <!--
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control" name="symbol" placeholder="Symbol" type="text" required/>
+        </div>
+        -->
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control" name="shares" placeholder="Shares" type="number" min="1" required />
+        </div>
+
+        <button class="btn btn-primary" type="submit">Buy</button>
+    </form>
+
+    <canvas id="myChart" width="100" height="100"></canvas>
+    <script>
+
+        function changeColor(){
+            var c = document.getElementById('change').innerHTML;
+            //console.log(c)
+            var p = document.getElementById('changePercent');
+            if (c < 0) {
+                document.getElementById('change').style.color = "red";
+                p.style.color = "red";
+            } else {
+                document.getElementById('change').style.color = "green";
+                p.style.color = "green";
+            }
+        }
+        changeColor();
+
+        const api_url = 'https://cloud.iexapis.com/stable/stock/{{symbol}}/chart/1m?token=pk_48629ca630d84f7aa267174fed093cd0';
+
+        async function getData() {
+            const response = await fetch(api_url);
+            const data = await response.json();
+            //console.log(data);
+            var close_price = data.map(function(elem) {
+                return elem.close;
+            });
+            var close_date = data.map(function(elem) {
+                return elem.date;
+            });
+            //console.log(close_price)
+            //console.log(close_date)
+
+            var ctx = document.getElementById('myChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: close_date,
+                    datasets: [{
+                        label: 'closing price',
+                        data: close_price,
+                        backgroundColor: [
+                            'blue'
+                        ],
+                        borderColor: [
+                            'blue'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+
+        getData();
+
+        </script>
+
 {% endblock %}
