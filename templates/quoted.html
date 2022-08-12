@@ -46,7 +46,7 @@
         const sandbox_api_url = 'https://sandbox.iexapis.com/stable/stock/{{symbol}}/chart/1y?token=Tpk_1143df5e7aff4f1ba5e61ff2fbfe011d';
 
         async function getData() {
-            const response = await fetch(sandbox_api_url);
+            const response = await fetch(api_url);
             const data = await response.json();
             //console.log(data);
             var close_price = data.map(function(elem) {

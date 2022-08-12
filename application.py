@@ -11,7 +11,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import apology, login_required, lookup, usd
 
 from statistics import mean
-import numpy as np
 import pandas as pd
 import requests
 import math
@@ -350,9 +349,8 @@ def analysis():
 
 
     hqm_columns = [
-                    'Ticker',
+                    'Symbol',
                     'Price',
-                    'Number of Shares to Buy',
                     'Five-Year Price Return',
                     'Five-Year Return Percentile',
                     'Two-Year Price Return',
@@ -361,7 +359,7 @@ def analysis():
                     'One-Year Return Percentile',
                     'Six-Month Price Return',
                     'Six-Month Return Percentile',
-                    'HQM Score'
+                    'Quality Score'
                     ]
 
     hqm_dataframe = pd.DataFrame(columns = hqm_columns)
@@ -375,7 +373,7 @@ def analysis():
             hqm_dataframe = hqm_dataframe.append(
                                             pd.Series([symbol,
                                                        data[symbol]['quote']['latestPrice'],
-                                                       'N/A',
+
                                                        data[symbol]['stats']['year5ChangePercent'],
                                                        'N/A',
                                                        data[symbol]['stats']['year2ChangePercent'],
@@ -408,10 +406,12 @@ def analysis():
         momentum_percentiles = []
         for time_period in time_periods:
             momentum_percentiles.append(hqm_dataframe.loc[row, f'{time_period} Return Percentile'])
-        hqm_dataframe.loc[row, 'HQM Score'] = mean(momentum_percentiles)
+        hqm_dataframe.loc[row, 'Quality Score'] = mean(momentum_percentiles)
 
-    hqm_dataframe.sort_values(by = 'HQM Score', ascending = True)
+    hqm_dataframe.sort_values(by = 'Quality Score', ascending = True)
     hqm_dataframe = hqm_dataframe[:51]
 
-    return render_template("analysis.html", tables=[hqm_dataframe.to_html(classes='data')], titles=hqm_dataframe.columns.values)
+    #print(hqm_dataframe.to_html())
+
+    return render_template("analysis.html", tables=[hqm_dataframe.to_html(classes='data')])
 

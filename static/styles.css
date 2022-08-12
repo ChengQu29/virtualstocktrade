@@ -63,5 +63,4 @@ table.dataframe, .dataframe th, .dataframe td {
 
 tr:nth-child(odd)		{ background-color:#eee; }
 tr:nth-child(even)	{ background-color:#fff; }
-
 tr:hover            { background-color: #f5f5dc;}
