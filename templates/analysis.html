@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Quote
+{% endblock %}
+
+{% block main %}
+
+<h3> Top 50 pick </h3>
+
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+<div class=page>
+
+  {% for table in tables %}
+    {{ table|safe }}
+  {% endfor %}
+</div>
+
+{% endblock %}

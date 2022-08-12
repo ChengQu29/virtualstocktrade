@@ -10,6 +10,13 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import apology, login_required, lookup, usd
 
+from statistics import mean
+import numpy as np
+import pandas as pd
+import requests
+import math
+from scipy import stats
+
 # Configure application
 app = Flask(__name__)
 
@@ -40,6 +47,8 @@ db = SQL("sqlite:///finance.db")
 # Make sure API key is set
 if not os.environ.get("API_KEY"):
     raise RuntimeError("API_KEY not set")
+
+IEX_CLOUD_API_TOKEN = os.environ.get("IEX_CLOUD_API_TOKEN")
 
 @app.route("/")
 @login_required
@@ -286,7 +295,6 @@ def sell():
 
         return render_template("sell.html", summary=summary)
 
-
 def errorhandler(e):
     """Handle error"""
     if not isinstance(e, HTTPException):
@@ -297,3 +305,113 @@ def errorhandler(e):
 # Listen for errors
 for code in default_exceptions:
     app.errorhandler(code)(errorhandler)
+
+
+@app.route("/analysis", methods=["GET", "POST"])
+@login_required
+def analysis():
+    stocks = pd.read_csv('sp_500_stocks.csv')
+
+# Function sourced from
+# https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
+    def chunks(lst, n):
+        """Yield successive n-sized chunks from lst."""
+        for i in range(0, len(lst), n):
+            yield lst[i:i + n]
+
+    symbol_groups = list(chunks(stocks['symbol'], 100))
+    symbol_strings = []
+
+    for i in range(0, len(symbol_groups)):
+        symbol_strings.append(','.join(symbol_groups[i]))
+    #     print(symbol_strings[i])
+
+    my_columns = ['Ticker', 'Price', 'One-Year Price Return', 'Number of Shares to Buy']
+
+    final_dataframe = pd.DataFrame(columns = my_columns)
+
+    for symbol_string in symbol_strings:
+    #     print(symbol_strings)
+        batch_api_call_url = f'https://sandbox.iexapis.com/stable/stock/market/batch/?types=stats,quote&symbols={symbol_string}&token={IEX_CLOUD_API_TOKEN}'
+        data = requests.get(batch_api_call_url).json()
+        for symbol in symbol_string.split(','):
+            final_dataframe = final_dataframe.append(
+                                            pd.Series([symbol,
+                                                      data[symbol]['quote']['latestPrice'],
+                                                      data[symbol]['stats']['year1ChangePercent'],
+                                                      'N/A'
+                                                      ],
+                                                      index = my_columns),
+                                            ignore_index = True)
+
+    final_dataframe.sort_values('One-Year Price Return', ascending = False, inplace = True)
+    final_dataframe = final_dataframe[:51]
+    final_dataframe.reset_index(drop = True, inplace = True)
+
+
+    hqm_columns = [
+                    'Ticker',
+                    'Price',
+                    'Number of Shares to Buy',
+                    'Five-Year Price Return',
+                    'Five-Year Return Percentile',
+                    'Two-Year Price Return',
+                    'Two-Year Return Percentile',
+                    'One-Year Price Return',
+                    'One-Year Return Percentile',
+                    'Six-Month Price Return',
+                    'Six-Month Return Percentile',
+                    'HQM Score'
+                    ]
+
+    hqm_dataframe = pd.DataFrame(columns = hqm_columns)
+
+    for symbol_string in symbol_strings:
+        #print(symbol_strings)
+        batch_api_call_url = f'https://sandbox.iexapis.com/stable/stock/market/batch/?types=stats,quote&symbols={symbol_string}&token={IEX_CLOUD_API_TOKEN}'
+
+        data = requests.get(batch_api_call_url).json()
+        for symbol in symbol_string.split(','):
+            hqm_dataframe = hqm_dataframe.append(
+                                            pd.Series([symbol,
+                                                       data[symbol]['quote']['latestPrice'],
+                                                       'N/A',
+                                                       data[symbol]['stats']['year5ChangePercent'],
+                                                       'N/A',
+                                                       data[symbol]['stats']['year2ChangePercent'],
+                                                       'N/A',
+                                                       data[symbol]['stats']['year1ChangePercent'],
+                                                       'N/A',
+                                                       data[symbol]['stats']['month6ChangePercent'],
+                                                       'N/A',
+                                                       'N/A'
+                                                       ],
+                                                      index = hqm_columns),
+                                            ignore_index = True)
+
+
+    hqm_dataframe.dropna(inplace=True)
+
+    time_periods = [
+                    'Five-Year',
+                    'Two-Year',
+                    'One-Year',
+                    'Six-Month'
+                    ]
+
+    for row in hqm_dataframe.index:
+        for time_period in time_periods:
+            hqm_dataframe.loc[row, f'{time_period} Return Percentile'] = stats.percentileofscore(hqm_dataframe[f'{time_period} Price Return'], hqm_dataframe.loc[row, f'{time_period} Price Return'])/100
+
+
+    for row in hqm_dataframe.index:
+        momentum_percentiles = []
+        for time_period in time_periods:
+            momentum_percentiles.append(hqm_dataframe.loc[row, f'{time_period} Return Percentile'])
+        hqm_dataframe.loc[row, 'HQM Score'] = mean(momentum_percentiles)
+
+    hqm_dataframe.sort_values(by = 'HQM Score', ascending = True)
+    hqm_dataframe = hqm_dataframe[:51]
+
+    return render_template("analysis.html", tables=[hqm_dataframe.to_html(classes='data')], titles=hqm_dataframe.columns.values)
+
